@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funcionamiento y Configuración de MPLS</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --accent-cyan: #06b6d4;
+            --accent-amber: #f59e0b;
+            --accent-violet: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navegación */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px 0;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--accent-cyan);
+        }
+
+        /* Contenedor Principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 40px;
+        }
+
+        /* Diapositivas */
+        .slide {
+            margin-bottom: 80px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .slide-header h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .slide-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .divider {
+            width: 80px;
+            height: 4px;
+            background: var(--accent-cyan);
+            margin: 20px auto;
+            border-radius: 2px;
+        }
+
+        /* Tarjetas */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-color: var(--accent-cyan);
+        }
+
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card p, .card li {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .card ul {
+            padding-left: 20px;
+        }
+
+        /* Etiquetas de colores */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .tag-cyan { background: rgba(49, 4, 247, 0.2); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        .tag-amber { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+        .tag-violet { background: rgba(139, 92, 246, 0.2); color: var(--accent-violet); border: 1px solid var(--accent-violet); }
+
+        /* Diagrama de Flujo MPLS */
+        .mpls-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-box {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            width: 200px;
+        }
+
+        .flow-box.ingress { border-color: var(--accent-cyan); }
+        .flow-box.transit { border-color: var(--accent-violet); }
+        .flow-box.egress { border-color: var(--accent-amber); }
+
+        .flow-box h4 { margin-bottom: 5px; font-size: 1.1rem; }
+        .flow-box small { color: var(--text-muted); font-size: 0.8rem; }
+        
+        .flow-arrow {
+            font-size: 2rem;
+            color: var(--text-muted);
+        }
+
+        .label-tag {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+        .lbl-push { color: var(--accent-cyan); }
+        .lbl-swap { color: var(--accent-violet); }
+        .lbl-pop { color: var(--accent-amber); }
+
+        /* Código de Configuración */
+        .code-block {
+            background: #0b1120;
+            border-left: 4px solid var(--accent-cyan);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 10px 0 20px 0;
+            color: #d0cbe1;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .code-block .comment { color: #75648b; }
+        .code-block .command { color: var(--accent-cyan); }
+
+        /* Plano de Datos vs Control */
+        .planes-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .plane-box {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            border-top: 5px solid;
+        }
+        .plane-control { border-top-color: var(--accent-violet); }
+        .plane-data { border-top-color: var(--accent-amber); }
+
+        .plane-box h3 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 80px 20px; }
+            .mpls-flow { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+            .planes-container { grid-template-columns: 1fr; }
+            nav { gap: 10px; padding: 10px; }
+            nav a { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="#portada">Portada</a>
+        <a href="#slide1">1. Caracteristicas</a>
+        <a href="#slide2">2. Arquitectura</a>
+        <a href="#slide3">3. Operaciones</a>
+        <a href="#slide4">4. Configuración</a>
+        <a href="#slide5">5. Planos</a>
+    </nav>
+
+    
+
+
+
+    <div class="container" id="portada">
+        <div class="slide" style="
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        ">
+
+            
+            <h1 style="
+                font-size: 4rem;
+                font-weight: 800;
+                background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 20px;
+                line-height: 1.2;
+            ">
+                RED MPLS<br>
+                Configuración y Funcionamiento
+            </h1>
+
+            <div class="divider"></div>
+
+            <p style="
+                max-width: 800px;
+                color: var(--text-muted);
+                font-size: 1.2rem;
+                margin-top: 20px;
+            ">
+                Tecnología de conmutación por etiquetas utilizada en redes de alta velocidad para optimizar el transporte de datos en infraestructuras modernas.
+            </p>
+
+            <div style="
+                margin-top: 60px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 16px;
+                padding: 35px 50px;
+                width: 100%;
+                max-width: 700px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            ">
+
+                <p style="margin-bottom: 15px; font-size: 1.1rem;">
+                    <strong style="color: var(--accent-cyan);">Estudiante:</strong><br>
+                    Wilian Estiven Coral Quiñonez
+                </p>
+
+                <p style="margin-bottom: 15px; font-size: 1.1rem;">
+                    <strong style="color: var(--accent-violet);">Tutor:</strong><br>
+                    Javier Enrique Arevalo
+                </p>
+
+                <p style="margin-bottom: 15px; font-size: 1.1rem;">
+                    <strong style="color: var(--accent-amber);">Curso:</strong><br>
+                    Conmutación
+                </p>
+
+                <p style="font-size: 1.1rem;">
+                    <strong style="color: var(--accent-cyan);">Universidad:</strong><br>
+                    Universidad Nacional Abierta y a Distancia - UNAD
+                </p>
+
+            </div>
+
+            <div style="
+                margin-top: 50px;
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+            ">
+                Ingeniería Electrónica
+            </div>
+
+        </div>
+    </div>
+
+
+
+
+    <!-- DIAPOSITIVA 1: INTRODUCCIÓN -->
+    <div class="container" id="slide1">
+        <div class="slide">
+            <div class="slide-header">
+                <span class="tag tag-cyan">Caracteristicas</span>
+                <h2>Principales Caracteristicas de una Red MPLS</h2>
+                <div class="divider"></div>
+                <p>Multiprotocol Label Switching (MPLS) es la tecnología estándar de la industria para redes de transporte de alta velocidad, operando en la "Capa 2.5" del modelo OSI para optimizar el reenvío de paquetes.</p>
+            </div>
+            
+            <div class="grid-3">
+                <div class="card">
+                    <h3>⚡ Velocidad de Conmutación</h3>
+                    <p>Los routers en el núcleo de la red (Core) no necesitan analizar las cabeceras IP complejas. Toman decisiones de reenvío basándose únicamente en una etiqueta simple de 32 bits, realizando la conmutación en hardware (CEF).</p>
+                </div>
+                <div class="card">
+                    <h3>🛤️ Ingeniería de Tráfico</h3>
+                    <p>Permite a los administradores dirigir el tráfico por rutas óptimas que no necesariamente serían elegidas por los protocolos de enrutamiento IP tradicionales (OSPF/EIGRP), equilibrando la carga de la red.</p>
+                </div>
+                <div class="card">
+                    <h3>🔒 Soporte de VPNs</h3>
+                    <p>Es la base para servicios como MPLS VPN (L3VPN) y VPLS (L2VPN), permitiendo aislar el tráfico de múltiples clientes de forma segura sobre la misma infraestructura física del proveedor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+    <!-- DIAPOSITIVA 2: ARQUITECTURA -->
+    <div class="container" id="slide2">
+        <div class="slide">
+            <div class="slide-header">
+                <span class="tag tag-violet">Arquitectura</span>
+                <h2>Elementos de la Red MPLS</h2>
+                <div class="divider"></div>
+            </div>
+
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🌐 LER (Label Edge Router)</h3>
+                    <p><strong>Also known as PE (Provider Edge).</strong></p>
+                    <p>Son los routers de borde. Se encargan de conectar la red del cliente con la red del proveedor.</p>
+                    <ul>
+                        <li><strong>Ingress PE:</strong> Recibe paquetes IP, consulta la tabla FIB y <em>inserta</em> la etiqueta MPLS.</li>
+                        <li><strong>Egress PE:</strong> Recibe paquetes MPLS, elimina la etiqueta y entrega el paquete IP al cliente.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>🔄 LSR (Label Switching Router)</h3>
+                    <p><strong>Also known as P (Provider).</strong></p>
+                    <p>Son los routers del núcleo de la red. No conocen las redes de los clientes, su única función es recibir paquetes etiquetados, consultar su tabla LFIB, intercambiar la etiqueta y reenviar el paquete al siguiente salto.</p>
+                </div>
+                <div class="card">
+                    <h3>🛤️ LSP (Label Switched Path)</h3>
+                    <p><strong>El "Túnel" Virtual.</strong></p>
+                    <p>Es la secuencia de routers (desde el Ingress hasta el Egress) por donde viaja un flujo de datos específico. Se establece dinámicamente gracias al protocolo LDP y las rutas proporcionadas por OSPF.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIAPOSITIVA 3: OPERACIONES -->
+    <div class="container" id="slide3">
+        <div class="slide">
+            <div class="slide-header">
+                <span class="tag tag-amber">Ciclo de Vida</span>
+                <h2>Operaciones de Etiquetas: PUSH, SWAP, POP</h2>
+                <div class="divider"></div>
+            </div>
+
+            <div class="mpls-flow">
+                <div class="flow-box ingress">
+                    <small>Cliente</small>
+                    <h4>Paquete IP Puro</h4>
+                    <div style="margin-top:10px;">➡</div>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="flow-box ingress">
+                    <small>Router Ingress (PE)</small>
+                    <h4>Encapsulación</h4>
+                    <span class="label-tag lbl-push">PUSH</span>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="flow-box transit">
+                    <small>Router Transit (P)</small>
+                    <h4>Conmutación</h4>
+                    <span class="label-tag lbl-swap">SWAP</span>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="flow-box egress">
+                    <small>Router Egress (PE)</small>
+                    <h4>Desencapsulación</h4>
+                    <span class="label-tag lbl-pop">POP</span>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="flow-box egress">
+                    <small>Cliente</small>
+                    <h4>Paquete IP Puro</h4>
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="card" style="border-top: 3px solid var(--accent-cyan);">
+                    <h3><span class="tag tag-cyan">PUSH</span></h3>
+                    <p>Se realiza en el <strong>Ingress LER</strong>. Cuando un paquete IP ingresa a la red MPLS, el router examina su tabla de enrutamiento IP (FIB), determina el FEC y le añade la cabecera MPLS con la etiqueta correspondiente al siguiente salto.</p>
+                </div>
+                <div class="card" style="border-top: 3px solid var(--accent-violet);">
+                    <h3><span class="tag tag-violet">SWAP</span></h3>
+                    <p>Se realiza en los <strong>LSR (Core)</strong>. El router recibe un paquete con una etiqueta de entrada, busca en su tabla LFIB qué etiqueta le corresponde al siguiente salto, retira la etiqueta vieja e inserta la nueva.</p>
+                </div>
+                <div class="card" style="border-top: 3px solid var(--accent-amber);">
+                    <h3><span class="tag tag-amber">POP</span></h3>
+                    <p>Se realiza en el <strong>Penúltimo Salto (PHP)</strong>. Para optimizar el router Egress, el router Core justo antes de destino retira la etiqueta MPLS y envía el paquete IP puro, ahorrando una doble búsqueda al router de salida.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIAPOSITIVA 4: CONFIGURACIÓN -->
+    <div class="container" id="slide4">
+        <div class="slide">
+            <div class="slide-header">
+                <span class="tag tag-cyan">Implementación en GNS3</span>
+                <h2>Configuración Paso a Paso</h2>
+                <div class="divider"></div>
+                <p>La implementación de MPLS requiere una base de enrutamiento IP sólida antes de activar las etiquetas.</p>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px;">
+                <h3>1️⃣ Enrutamiento Base (OSPF)</h3>
+                <p>MPLS requiere que los routers conozcan la topología de red. OSPF propaga las rutas, incluyendo las interfaces Loopback vitales para LDP.</p>
+                <div class="code-block">
+                    <span class="comment">! Configuración en todos los routers (Ejemplo R3 Core)</span><br>
+                    router ospf 1<br>
+                    network 10.0.0.0 0.0.0.255 area 0<br>
+                    network 10.0.1.0 0.0.0.255 area 0<br>
+                    network 3.3.3.3 0.0.0.0 area 0 <span class="comment">! Loopback es obligatoria</span>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px;">
+                <h3>2️⃣ Activación de CEF y MPLS</h3>
+                <p>Cisco Express Forwarding (CEF) es un requisito obligatorio porque MPLS depende de las estructuras de datos de CEF (FIB y Adjacency Table) para el reenvío.</p>
+                <div class="code-block">
+                    <span class="comment">! Activación global</span><br>
+                    <span class="command">ip cef</span><br>
+                    <span class="command">mpls label protocol ldp</span><br><br>
+                    <span class="comment">! Activación en interfaces del Core (R3 y R4)</span><br>
+                    interface FastEthernet 0/0<br>
+                    <span class="command">mpls ip</span><br><br>
+                    <span class="comment">! En Routers de Borde (R1/R2), solo en interfaces hacia el Core</span><br>
+                    interface FastEthernet 1/0 <span class="comment">! Hacia R3/R4</span><br>
+                    <span class="command">mpls ip</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIAPOSITIVA 5: PLANOS -->
+    <div class="container" id="slide5">
+        <div class="slide">
+            <div class="slide-header">
+                <span class="tag tag-violet">Funcionamiento Interno</span>
+                <h2>Plano de Control vs. Plano de Datos</h2>
+                <div class="divider"></div>
+                <p>La magia de MPLS radica en la separación estricta entre quién construye las rutas y quién reenvía el tráfico.</p>
+            </div>
+
+            <div class="planes-container">
+                <div class="plane-box plane-control">
+                    <h3>🧠 Plano de Control (El Cerebro)</h3>
+                    <p><strong>Función:</strong> Intercambiar información de enrutamiento y mapear rutas a etiquetas. No reenvía tráfico de usuario.</p>
+                    <ul style="margin-top: 15px; color: var(--text-muted);">
+                        <li><strong>OSPF/IS-IS:</strong> Conoce las rutas IP y construye la tabla RIB.</li>
+                        <li><strong>LDP (Label Distribution Protocol):</strong> Toma las rutas del OSPF y les asigna etiquetas locales, creando la tabla LIB (Label Information Base).</li>
+                        <li>Establece la vecindad con el comando <code>show mpls ldp neighbor</code>.</li>
+                    </ul>
+                </div>
+                <div class="plane-box plane-data">
+                    <h3>⚡ Plano de Datos (Los Músculos)</h3>
+                    <p><strong>Función:</strong> Reenviar paquetes a velocidades de alambre (Wire-speed) sin procesar IP.</p>
+                    <ul style="margin-top: 15px; color: var(--text-muted);">
+                        <li><strong>CEF (FIB):</strong> Reenvía tráfico IP puro (entrante al Ingress).</li>
+                        <li><strong>LFIB (Label Forwarding Information Base):</strong> Reenvía tráfico MPLS. Consulta la etiqueta de entrada, determina la etiqueta de salida y la interfaz (PUSH/SWAP/POP).</li>
+                        <li>Verificado con <code>show mpls forwarding-table</code>.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 60px; color: var(--text-muted); font-size: 0.9rem;">
+                <p>Conmutación - UNAD | Wilian Estiven Coral Quiñonez | Escenario 5</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
